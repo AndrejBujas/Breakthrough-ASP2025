@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from math import inf
 import pygame
 
+racunanja = 0
 VELICINA = 8
 Potez = Tuple[int,int,int,int]
 
@@ -234,46 +235,83 @@ def potezi(state: GameState):
                 potezi.append((r,k,nr,nk))
     return potezi
 
+
+
+# def heuristika(state: GameState) -> int:
+#     board = state.board
+#     igrac = "B"
+#     protivnik = "W"
+#
+#     score = 0
+#
+#     #Materijal
+#     crni = sum(row.count(igrac) for row in board)
+#     beli = sum(row.count(protivnik) for row in board)
+#     score += (crni - beli) * 100
+#
+#     #Mobilnost
+#     moje_poteza = len(potezi(state))
+#     score += moje_poteza * 5
+#
+#     # Progresija ka cilju
+#     for r in range(8):
+#         for c in range(8):
+#             if board[r][c] == igrac:
+#                 score += (7 - r) * 10
+#             elif board[r][c] == protivnik:
+#                 score -= r * 10
+#
+#     #Sides proximity
+#     for r in range(8):
+#         for c in range(8):
+#             if board[r][c] == igrac:
+#                 dist_side = min(c, 7 - c)
+#                 score += (3 - dist_side) * 15
+#
+#     #Centre proximity
+#     for r in range(8):
+#         for c in range(8):
+#             if board[r][c] == igrac:
+#                 dist_center = abs(c - 3.5)
+#                 score -= int(dist_center) * 2
+#
+#     return score
+
 def heuristika(state: GameState) -> int:
     board = state.board
     igrac = "B"
     protivnik = "W"
 
+    crni = beli = 0
     score = 0
 
-    #Materijal
-    crni = sum(row.count(igrac) for row in board)
-    beli = sum(row.count(protivnik) for row in board)
+    for r in range(8):
+        for c in range(8):
+            fig = board[r][c]
+            if fig == "B":
+                crni += 1
+                score += (7 - r) * 10               # progresija
+                dist_side = min(c, 7 - c)
+                score += (3 - dist_side) * 15       # stranično
+                dist_center = abs(c - 3.5)
+                score -= int(dist_center) * 2       # centar
+            elif fig == "W":
+                beli += 1
+                score -= r * 10
+                dist_side = min(c, 7 - c)
+                score -= (3 - dist_side) * 15
+                dist_center = abs(c - 3.5)
+                score += int(dist_center) * 2
+
+    # materijal
     score += (crni - beli) * 100
 
-    #Mobilnost
-    moje_poteza = len(potezi(state))
-    score += moje_poteza * 5
-
-    # Progresija ka cilju
-    for r in range(8):
-        for c in range(8):
-            if board[r][c] == igrac:
-                score += (7 - r) * 10
-            elif board[r][c] == protivnik:
-                score -= r * 10
-
-    #Sides proximity
-    for r in range(8):
-        for c in range(8):
-            if board[r][c] == igrac:
-                dist_side = min(c, 7 - c)
-                score += (3 - dist_side) * 15
-
-    #Centre proximity
-    for r in range(8):
-        for c in range(8):
-            if board[r][c] == igrac:
-                dist_center = abs(c - 3.5)
-                score -= int(dist_center) * 2
+    # mobilnost - ali BEZ generisanja svih poteza
+    # score += len(potezi(state)) * 5  ❌ preskupo
+    # umesto toga, koristi aproksimaciju:
+    score += (crni - beli) * 3
 
     return score
-
 
 def minimax(state: GameState, depth: int, alpha: int, beta: int,maximizing: bool):
     hash = hash_state(state)
@@ -376,7 +414,7 @@ def pokreni_igru():
 
         # AI potez (crni)
         if state.turn == "B":
-            ai_potez = naj_potez(state, 3)
+            ai_potez = naj_potez(state, 4)
             state = primeni_potez(state, ai_potez)
             tabla.update_from_state(state)
 
