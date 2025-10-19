@@ -6,7 +6,7 @@ from math import inf
 import pygame
 
 racunanja = 0
-VELICINA = 8
+VELICINA = 7
 Potez = Tuple[int,int,int,int]
 
 transposition_table: Dict[int, Tuple[int, int]] = {}
@@ -122,11 +122,6 @@ class Board:
                             if kvadrat.x == nx and kvadrat.y == ny:
                                 kvadrat.highlight = True
 
-            # for polje in self.polja:
-            #     xp = polje.x
-            #     yp = polje.y
-            #     if yp + 1 == yk and xk - 1 <= xp <= xk + 1:
-            #         polje.highlight = True
 
         else:
             self.selected_piece = None
@@ -175,7 +170,7 @@ class GameState:
         for i in range(VELICINA):
             if self.board[0][i] == 'W':
                 return "W"
-            if self.board[7][i] == 'B':
+            if self.board[VELICINA-1][i] == 'B':
                 return "B"
 
         ima_belih = any("W" in row for row in self.board)
@@ -194,7 +189,7 @@ def napravi_tablu():
     for i in range(2):
         for j in range(VELICINA):
             t[i][j] = "B"
-    for i in range(6,8):
+    for i in range(VELICINA-2,VELICINA):
         for j in range(VELICINA):
             t[i][j] = "W"
 
@@ -224,14 +219,14 @@ def potezi(state: GameState):
                 continue
 
             nr,nk = r + smer, k
-            if  0 <= nr < 8 and  0 <= nk < 8 and state.board[nr][nk] == ".":
+            if  0 <= nr < VELICINA and  0 <= nk < VELICINA and state.board[nr][nk] == ".":
                 potezi.append((r,k,nr,nk))
 
             nr,nk = r + smer, k - 1
-            if  0 <= nr < 8 and  0 <= nk < 8 and state.board[nr][nk] != state.turn :
+            if  0 <= nr < VELICINA and  0 <= nk < VELICINA and state.board[nr][nk] != state.turn :
                 potezi.append((r,k,nr,nk))
             nr,nk = r + smer, k + 1
-            if  0 <= nr < 8 and  0 <= nk < 8 and state.board[nr][nk] != state.turn:
+            if  0 <= nr < VELICINA and  0 <= nk < VELICINA and state.board[nr][nk] != state.turn:
                 potezi.append((r,k,nr,nk))
     return potezi
 
@@ -279,14 +274,12 @@ def potezi(state: GameState):
 
 def heuristika(state: GameState) -> int:
     board = state.board
-    igrac = "B"
-    protivnik = "W"
 
     crni = beli = 0
     score = 0
 
-    for r in range(8):
-        for c in range(8):
+    for r in range(VELICINA):
+        for c in range(VELICINA):
             fig = board[r][c]
             if fig == "B":
                 crni += 1
@@ -306,9 +299,7 @@ def heuristika(state: GameState) -> int:
     # materijal
     score += (crni - beli) * 100
 
-    # mobilnost - ali BEZ generisanja svih poteza
-    # score += len(potezi(state)) * 5  ❌ preskupo
-    # umesto toga, koristi aproksimaciju:
+    # mobilnost
     score += (crni - beli) * 3
 
     return score
@@ -397,7 +388,7 @@ def pokreni_igru():
 
     # Inicijalno stanje
     state = GameState(napravi_tablu(), 'W')
-    tabla = Board(WIDTH, HEIGHT, 8)
+    tabla = Board(WIDTH, HEIGHT, VELICINA)
     tabla.update_from_state(state)
 
 
@@ -412,7 +403,7 @@ def pokreni_igru():
         if kraj == "B":
             run = False
 
-        # AI potez (crni)
+
         if state.turn == "B":
             ai_potez = naj_potez(state, 4)
             state = primeni_potez(state, ai_potez)
